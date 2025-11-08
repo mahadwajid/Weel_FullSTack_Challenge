@@ -4,6 +4,7 @@ import Login from "./Pages/Login";
 import DeliveryForm from "./Pages/DeliveryForm";
 import Summary from "./Pages/Summary";
 import React from "react";
+import "./App.css";
 
 function ProtectedRoute({ children }) {
   const { token } = React.useContext(AuthContext);

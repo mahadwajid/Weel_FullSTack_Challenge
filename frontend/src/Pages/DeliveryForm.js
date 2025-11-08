@@ -1,46 +1,179 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../Context/AuthContext";
 import api from "../API";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import "../App.css";
 
 export default function DeliveryForm() {
   const { token } = useContext(AuthContext);
-  const [form, setForm] = useState({ deliveryType: "", phone: "", address: "", pickupDatetime: "" });
+  const [form, setForm] = useState({ deliveryType: "", phone: "", address: "", pickupDatetime: "", notes: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editOrderId = searchParams.get("edit");
+  const isEditMode = !!editOrderId;
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (isEditMode && token) {
+      setLoading(true);
+      api.get(`/orders/${editOrderId}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          const order = res.data;
+          const formattedDate = order.pickupDatetime 
+            ? new Date(order.pickupDatetime).toISOString().slice(0, 16)
+            : "";
+          
+          setForm({
+            deliveryType: order.deliveryType || "",
+            phone: order.phone || "",
+            address: order.address || "",
+            pickupDatetime: formattedDate,
+            notes: order.notes || ""
+          });
+          setLoading(false);
+        })
+        .catch(err => {
+          setError("Failed to load order");
+          setLoading(false);
+        });
+    }
+  }, [isEditMode, editOrderId, token]);
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    try {
-      const res = await api.post("/orders", form, { headers: { Authorization: `Bearer ${token}` } });
-      localStorage.setItem("orderId", res.data.id);
-      navigate("/summary");
-    } catch (err) {
-      alert(err.response.data.error);
+  useEffect(() => {
+    // Close datetime picker when clicking outside
+    const handleClickOutside = (e) => {
+      if (e.target.type !== "datetime-local" && document.activeElement?.type === "datetime-local") {
+        document.activeElement.blur();
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    
+    // Close datetime picker after selection
+    if (e.target.type === "datetime-local") {
+      setTimeout(() => {
+        e.target.blur();
+      }, 100);
     }
   };
 
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    
+    try {
+      if (isEditMode) {
+        const res = await api.put(`/orders/${editOrderId}`, form, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        localStorage.setItem("orderId", res.data.id);
+        navigate("/summary");
+      } else {
+        const res = await api.post("/orders", form, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        localStorage.setItem("orderId", res.data.id);
+        navigate("/summary");
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || "Something went wrong");
+      setLoading(false);
+    }
+  };
+
+  if (loading && isEditMode) {
+    return (
+      <div className="container">
+        <div className="card">
+          <div className="loading">Loading order details...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Delivery Preference</h2>
-      <select name="deliveryType" onChange={handleChange}>
-        <option value="">Select</option>
-        <option value="IN_STORE">In Store</option>
-        <option value="DELIVERY">Delivery</option>
-        <option value="CURBSIDE">Curbside</option>
-      </select>
+    <div className="container">
+      <div className="card">
+        <h2>{isEditMode ? "Edit Order" : "Delivery Preference"}</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Delivery Type *</label>
+            <select name="deliveryType" value={form.deliveryType} onChange={handleChange} required>
+              <option value="">Select delivery type</option>
+              <option value="IN_STORE">In Store Pickup</option>
+              <option value="DELIVERY">Home Delivery</option>
+              <option value="CURBSIDE">Curbside Pickup</option>
+            </select>
+          </div>
 
-      {(form.deliveryType === "DELIVERY" || form.deliveryType === "CURBSIDE") && (
-        <input name="phone" placeholder="Phone" onChange={handleChange} />
-      )}
+          {(form.deliveryType === "DELIVERY" || form.deliveryType === "CURBSIDE") && (
+            <div className="form-group">
+              <label>Phone Number *</label>
+              <input
+                name="phone"
+                type="text"
+                placeholder="Enter your phone number"
+                value={form.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          )}
 
-      {form.deliveryType === "DELIVERY" && (
-        <input name="address" placeholder="Address" onChange={handleChange} />
-      )}
+          {form.deliveryType === "DELIVERY" && (
+            <div className="form-group">
+              <label>Delivery Address *</label>
+              <input
+                name="address"
+                type="text"
+                placeholder="Enter your delivery address"
+                value={form.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          )}
 
-      <input type="datetime-local" name="pickupDatetime" onChange={handleChange} />
-      <button>Next</button>
-    </form>
+          <div className="form-group">
+            <label>Pickup/Delivery Date & Time</label>
+            <input
+              type="datetime-local"
+              name="pickupDatetime"
+              value={form.pickupDatetime}
+              onChange={handleChange}
+              onClick={(e) => {
+                // Prevent event bubbling to close handler
+                e.stopPropagation();
+              }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Additional Notes (Optional)</label>
+            <textarea
+              name="notes"
+              placeholder="Any special instructions?"
+              value={form.notes}
+              onChange={handleChange}
+              rows="3"
+            />
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+          <button type="submit" disabled={loading}>
+            {loading ? "Processing..." : isEditMode ? "Update Order" : "Continue"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
