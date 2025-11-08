@@ -41,7 +41,6 @@ export default function DeliveryForm() {
   }, [isEditMode, editOrderId, token]);
 
   useEffect(() => {
-    // Close datetime picker when clicking outside
     const handleClickOutside = (e) => {
       if (e.target.type !== "datetime-local" && document.activeElement?.type === "datetime-local") {
         document.activeElement.blur();
@@ -57,7 +56,6 @@ export default function DeliveryForm() {
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
     
-    // Close datetime picker after selection
     if (e.target.type === "datetime-local") {
       setTimeout(() => {
         e.target.blur();
@@ -151,7 +149,6 @@ export default function DeliveryForm() {
               value={form.pickupDatetime}
               onChange={handleChange}
               onClick={(e) => {
-                // Prevent event bubbling to close handler
                 e.stopPropagation();
               }}
             />
