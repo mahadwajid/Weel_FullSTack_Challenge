@@ -1,10 +1,5 @@
-function API(){
-    return(
-        <div>
-            <h2>
-                I am API
-            </h2>
-        </div>
-    )
-}
+import axios from "axios";
+
+const API = axios.create({ baseURL: "http://localhost:8080" });
+
 export default API;
