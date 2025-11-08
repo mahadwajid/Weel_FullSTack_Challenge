@@ -30,12 +30,6 @@ describe('Login Tests', () => {
   });
 
   it('should navigate to /delivery on successful login', async () => {
-    const mockNavigate = jest.fn();
-    jest.mock('react-router-dom', () => ({
-      ...jest.requireActual('react-router-dom'),
-      useNavigate: () => mockNavigate,
-    }));
-
     api.post.mockResolvedValue({ data: { token: 'test-token' } });
 
     renderWithRouter(<Login />);

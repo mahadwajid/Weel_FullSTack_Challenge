@@ -11,6 +11,7 @@ module.exports = {
     '!src/scripts/**'
   ],
   coverageDirectory: 'coverage',
-  verbose: true
+  verbose: true,
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.js']
 };
 

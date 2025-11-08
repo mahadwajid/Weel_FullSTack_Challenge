@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { validateLogin, validateOrder } from '../middleware/validation.js';
 
 describe('Validation Middleware Tests', () => {
