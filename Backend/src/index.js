@@ -16,6 +16,14 @@ app.use("/orders", authenticateToken, orderRoutes);
 
 const PORT = process.env.PORT || 8080;
 
-sequelize.sync().then(() => {
-  app.listen(PORT, () => console.log(`Backend running on ${PORT}`));
-});
+sequelize.authenticate()
+  .then(() => {
+    console.log("Database connected");
+    return sequelize.sync({ alter: false });
+  })
+  .then(() => {
+    app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("Database connection error:", err);
+  });

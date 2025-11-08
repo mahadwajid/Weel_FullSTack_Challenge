@@ -4,4 +4,4 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 EXPOSE 8080
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "node src/scripts/wait-for-db.cjs && npm run setup && npm run dev"]
