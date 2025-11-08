@@ -9,6 +9,8 @@ export default function DeliveryForm() {
   const [form, setForm] = useState({ deliveryType: "", phone: "", address: "", pickupDatetime: "", notes: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editOrderId = searchParams.get("edit");
@@ -60,6 +62,39 @@ export default function DeliveryForm() {
       setTimeout(() => {
         e.target.blur();
       }, 100);
+    }
+  };
+
+  const handleAISuggestion = async () => {
+    if (!form.deliveryType) {
+      setAiMessage("Please select a delivery type first");
+      setTimeout(() => setAiMessage(""), 3000);
+      return;
+    }
+
+    setAiLoading(true);
+    setAiMessage("");
+    
+    try {
+      const res = await api.post(
+        "/ai/suggest-time",
+        {
+          deliveryType: form.deliveryType,
+          currentTime: new Date().toISOString(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data.suggestedTime) {
+        setForm({ ...form, pickupDatetime: res.data.suggestedTime });
+        setAiMessage(res.data.aiPowered ? "AI suggested time applied!" : "Suggested time applied!");
+        setTimeout(() => setAiMessage(""), 3000);
+      }
+    } catch (err) {
+      setAiMessage("Unable to get suggestion. Please select time manually.");
+      setTimeout(() => setAiMessage(""), 3000);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -143,15 +178,39 @@ export default function DeliveryForm() {
 
           <div className="form-group">
             <label>Pickup/Delivery Date & Time</label>
-            <input
-              type="datetime-local"
-              name="pickupDatetime"
-              value={form.pickupDatetime}
-              onChange={handleChange}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            />
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                type="datetime-local"
+                name="pickupDatetime"
+                value={form.pickupDatetime}
+                onChange={handleChange}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                style={{ flex: 1 }}
+              />
+              {form.deliveryType && (
+                <button
+                  type="button"
+                  onClick={handleAISuggestion}
+                  disabled={aiLoading || loading}
+                  className="ai-suggestion-btn"
+                  title="Get AI-powered time suggestion"
+                >
+                  {aiLoading ? "..." : "AI"}
+                </button>
+              )}
+            </div>
+            {aiMessage && (
+              <div style={{ 
+                marginTop: "8px", 
+                fontSize: "14px", 
+                color: "#666",
+                fontStyle: "italic"
+              }}>
+                {aiMessage}
+              </div>
+            )}
           </div>
 
           <div className="form-group">

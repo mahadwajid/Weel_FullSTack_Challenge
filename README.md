@@ -21,6 +21,7 @@ A full-stack web application for managing delivery orders with user authenticati
 - **User Authentication**: Secure login with JWT tokens
 - **Order Management**: Create, view, and edit delivery orders
 - **Delivery Types**: Support for In-Store, Home Delivery, and Curbside pickup
+- **AI Time Suggestions**:  AI-powered time suggestions for optimal pickup/delivery times
 - **Form Validation**: Client and server-side validation
 - **Responsive Design**: Works on desktop and mobile devices
 - **Protected Routes**: Only authenticated users can access order pages
@@ -146,6 +147,15 @@ JWT_SECRET=supersecret
 
 # Server Port (default: 8080)
 PORT=8080
+
+# AI Feature (Optional - for AI time suggestions)
+# Set to "true" to enable AI-powered suggestions (requires HUGGING_FACE_API_KEY)
+AI_ENABLED=false
+
+# Hugging Face API Key (Optional - free, no credit card required)
+# Get your free API key at: https://huggingface.co/settings/tokens
+# If not provided, the system will use intelligent rule-based suggestions
+HUGGING_FACE_API_KEY=your_huggingface_api_key_here
 ```
 
 **Example for local PostgreSQL:**
@@ -153,7 +163,15 @@ PORT=8080
 DATABASE_URL=postgres://postgres:mypassword@localhost:5432/appdb
 JWT_SECRET=my-super-secret-jwt-key-12345
 PORT=8080
+AI_ENABLED=false
+HUGGING_FACE_API_KEY=your_huggingface_api_key_here
 ```
+
+**Note about AI Feature:**
+- The AI time suggestion feature works **without any API key** using intelligent rule-based suggestions
+- To enable AI-powered suggestions, set `AI_ENABLED=true` and add your free Hugging Face API key
+- Get a free API key (no credit card required) at: https://huggingface.co/settings/tokens
+- The feature gracefully degrades to rule-based suggestions if AI is unavailable
 
 ### Frontend `.env` File (Optional)
 
@@ -255,6 +273,14 @@ Weel_FullSTack_Challenge/
 3. **Environment Variables**: Proper configuration management
 4. **Auto Migrations**: Database setup happens automatically
 
+### AI Feature
+1. **AI Time Suggestions**:  Intelligent time suggestions for optimal pickup/delivery times
+2. **Graceful Degradation**: Works without API key using rule-based suggestions
+3. **Backend-Proxied**: All AI requests go through backend for security
+4. **Free API Support**: Uses Hugging Face Inference API (free, no credit card required)
+5. **Test Coverage**: Fully tested with mocks for reliable testing
+6. **User-Friendly**: One-click AI suggestion button in the delivery form
+
 ## Running Tests
 
 ### Backend Tests
@@ -287,11 +313,12 @@ npm test
 -  Conditional fields (phone/address based on delivery type)
 -  Past-time blocking (datetime validation)
 -  Summary page consistency (order display)
+-  AI time suggestion feature
 
 ### Test Coverage
 
-- **Backend**: Login, auth guard, order validation
-- **Frontend**: Login navigation, guards, conditional fields, past-time block, summary consistency
+- **Backend**: Login, auth guard, order validation, AI time suggestions
+- **Frontend**: Login navigation, guards, conditional fields, past-time block, summary consistency, AI suggestions
 
 ##  API Endpoints
 
@@ -310,6 +337,12 @@ npm test
 - `PUT /orders/:id` - Update order
   - Body: `{ deliveryType, phone?, address?, pickupDatetime?, notes? }`
   - Returns: Updated order object
+
+### AI Features (All require authentication)
+- `POST /ai/suggest-time` - Get AI-powered time suggestion
+  - Body: `{ deliveryType, currentTime? }`
+  - Returns: `{ suggestedTime: "YYYY-MM-DDTHH:mm", aiPowered: boolean }`
+  - **Note**: Works without API key using intelligent rule-based suggestions. Set `AI_ENABLED=true` and `HUGGING_FACE_API_KEY` for AI-powered suggestions.
 
 
 ## Available Scripts

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { sequelize } from "./models/index.js";
 import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/orders.js";
+import aiRoutes from "./routes/ai.js";
 import { authenticateToken } from "./middleware/auth.js";
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/orders", authenticateToken, orderRoutes);
+app.use("/ai", authenticateToken, aiRoutes);
 
 const PORT = process.env.PORT || 8080;
 
